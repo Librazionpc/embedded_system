@@ -4,7 +4,7 @@ import os
 import telepot  # Use `python-telegram-bot` for Telegram bot functionality
 
 # Initialize the Telegram bot
-TOKEN = '6720585209:AAGXdL4KDE9LMrtXezpovTiFAYlDGWxyqmQ'
+TOKEN = ''
 bot = telepot.Bot(TOKEN)
 
 # Path to authorized faces directory
