@@ -1,14 +1,38 @@
+import os
+import signal
 from deepface import DeepFace
 import cv2
-import os
-import telepot  # Use `python-telegram-bot` for Telegram bot functionality
+import telepot
+from picamera2 import Picamera2
 
 # Initialize the Telegram bot
-TOKEN = ''
+TOKEN = '6991600551:AAHbELDM9OPCSnSguSKpHIN4bIMd4rWWwA0'
 bot = telepot.Bot(TOKEN)
+
+# Send a startup message to notify that the bot is running
+STARTUP_CHAT_ID = '6340126645'  # Replace with your chat ID
+bot.sendMessage(STARTUP_CHAT_ID, "Face recognition bot is starting...")
 
 # Path to authorized faces directory
 authorized_faces_dir = "authorized_faces"
+
+def kill_camera_processes():
+    """
+    Kill any processes that might be using the camera (e.g., libcamera or other scripts).
+    """
+    try:
+        # Find processes that may use the camera
+        processes = os.popen("ps aux | grep 'libcamera\|python' | grep -v grep").readlines()
+        for process in processes:
+            cols = process.split()
+            pid = int(cols[1])  # Process ID is in the second column
+            os.kill(pid, signal.SIGTERM)  # Terminate the process
+            print(f"Terminated process: {cols[-1]} (PID: {pid})")
+    except Exception as e:
+        print(f"Error while killing camera processes: {e}")
+
+# Call this function at the start of the program
+kill_camera_processes()
 
 def verify_face(input_image_path):
     for person_name in os.listdir(authorized_faces_dir):
@@ -17,7 +41,14 @@ def verify_face(input_image_path):
         for image_name in os.listdir(person_folder):
             person_image_path = os.path.join(person_folder, image_name)
             try:
-                result = DeepFace.verify(img1_path=input_image_path, img2_path=person_image_path, enforce_detection=True, distance_metric='cosine', model_name='Facenet', threshold=0.3)
+                result = DeepFace.verify(
+                    img1_path=input_image_path, 
+                    img2_path=person_image_path, 
+                    enforce_detection=True, 
+                    distance_metric='cosine', 
+                    model_name='Facenet', 
+                    threshold=0.3
+                )
 
                 print(f"Comparing with {person_name}: {result}")
                 
@@ -31,23 +62,28 @@ def verify_face(input_image_path):
     return False
 
 def capture_face():
-    cap = cv2.VideoCapture(0)  # 0 is typically the default camera
-    
-    ret, frame = cap.read()
-    if not ret:
-        print("Error: Could not read frame from camera.")
-        cap.release()
+    try:
+        picam = Picamera2()
+        picam.start()  # Start the camera
+        frame = picam.capture_array()  # Capture an image
+        
+        if frame is None:
+            print("Error: Could not read frame from camera.")
+            return None
+
+        input_image_path = "captured_face.jpg"
+        cv2.imwrite(input_image_path, frame)  # Save the image to a file
+        picam.stop()  # Stop the camera
+        picam.close()  # Release the camera resource
+
+        if not os.path.exists(input_image_path) or os.path.getsize(input_image_path) == 0:
+            print("Error: Captured image was not saved correctly.")
+            return None
+
+        return input_image_path
+    except Exception as e:
+        print(f"Error accessing the camera: {e}")
         return None
-
-    input_image_path = "captured_face.jpg"
-    cv2.imwrite(input_image_path, frame)
-    cap.release()
-
-    if not os.path.exists(input_image_path) or os.path.getsize(input_image_path) == 0:
-        print("Error: Captured image was not saved correctly.")
-        return None
-
-    return input_image_path
 
 def handle_bot_message(msg):
     chat_id = msg['chat']['id']
@@ -97,5 +133,6 @@ def handle_bot_message(msg):
 bot.message_loop(handle_bot_message)
 
 print("Bot is listening...")
+bot.sendMessage(STARTUP_CHAT_ID, "Bot is ready and listening for commands!")  # Send confirmation message on startup
 while True:
     pass
