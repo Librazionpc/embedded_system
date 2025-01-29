@@ -43,14 +43,45 @@ class DepartmentAuthServices:
         # Find the department by department name
         department = await Department.filter_by(session, departmentname=departmentname)
         
-        if not department:
-            return None  # Return an appropriate response or error if department doesn't exist
-        
-        # Update department details (you can add additional fields if necessary)
-        if not department_new_name or not faultyadmin_id:
-            department.faultyadmin_id = faultyadmin_id
-        
-        # Save the updated department to the database
+        if department:
+            if faultyadmin_id:
+                department.faultyadmin_id = faultyadmin_id
+            elif department_new_name:
+                department.departmentname = department_new_name
+            # Save the updated department to the database
             await department.update(session, department)
         
             return department
+        
+        else:
+            return None
+    @staticmethod   
+    async def get_department_details(data: dict, session: AsyncSession):
+        """
+        Retrieve department details including lecturers and students.
+        """
+        departmentname = data.get("departmentname")
+        
+        if not departmentname:
+            return {"Error": "field is requred"}
+        
+        department = await Department.filter_by(session, departmentname=departmentname)
+        
+        if not department:
+            return {"Error": "Department not found"}
+
+        return {
+           department.to_dict()
+        }
+
+    @staticmethod
+    async def delete(data: dict, session):
+        departmentemail = data.get("departmentemail")
+        if not departmentemail:
+            return {"Error : email not provided"}
+
+        department = await Department.filter_by(session=session, email=departmentemail)
+        if not department:
+            return {"Error: Not Found"}
+        return await Department.delete(session, department)
+    

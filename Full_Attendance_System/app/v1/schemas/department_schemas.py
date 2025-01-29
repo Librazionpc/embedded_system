@@ -15,7 +15,8 @@ class DepartmentUpdate(BaseModel):
     new_name: Optional[str]  # Correct syntax for Optional[str]
     faultyid: Optional[uuid.UUID]  # Correct type for Optional[uuid.UUID]
 
-
+class DepartmentDetails:
+    departmentname: str
 # Schema for returning a Department's data
 class DepartmentOut(BaseModel):
     id: str

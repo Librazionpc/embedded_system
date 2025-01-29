@@ -10,10 +10,13 @@ class FaultyAdmin(BaseModel, Base):
     faultyname = Column(String(50), nullable=False)
     faultyemail = Column(String(50), nullable=False)
     password = Column(String(255), nullable=False)
-    fingerprint = Column(String(50), nullable=False, unique=True)
+    otp = Column(Integer, nullable=True)
+    otp_expiry = Column(DateTime, nullable=True)
+    fingerprint = Column(String, nullable=False)
     faultyphone = Column(String(50), nullable=False)
     faultyaddress = Column(String(50), nullable=False)
     departments = relationship(Department, back_populates='faultyadmin')
+    
     
     
     
