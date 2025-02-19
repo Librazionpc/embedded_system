@@ -1,8 +1,8 @@
-"""Fixing Issues
+"""Updateing schema
 
-Revision ID: 20c32b84f34c
+Revision ID: c329c99e87d8
 Revises: 
-Create Date: 2025-02-14 13:39:25.229097
+Create Date: 2025-02-15 23:52:07.384296
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '20c32b84f34c'
+revision: str = 'c329c99e87d8'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -39,6 +39,9 @@ def upgrade() -> None:
     op.create_table('departments',
     sa.Column('departmentname', sa.String(length=50), nullable=False),
     sa.Column('facultyadmin_id', sa.Integer(), nullable=False),
+    sa.Column('department_email', sa.String(length=255), nullable=True),
+    sa.Column('fingerprint', sa.String(length=255), nullable=True),
+    sa.Column('password', sa.String(length=255), nullable=True),
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('updated_at', sa.DateTime(), nullable=True),
@@ -61,15 +64,15 @@ def upgrade() -> None:
     )
     op.create_table('lecturers',
     sa.Column('lecturername', sa.String(length=50), nullable=False),
-    sa.Column('lectereremail', sa.String(length=50), nullable=False),
+    sa.Column('lectureremail', sa.String(length=50), nullable=False),
     sa.Column('department_id', sa.Integer(), nullable=False),
-    sa.Column('course_id', sa.Integer(), nullable=False),
+    sa.Column('password', sa.String(length=50), nullable=False),
+    sa.Column('fingerprint', sa.String(length=50), nullable=False),
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('updated_at', sa.DateTime(), nullable=True),
     sa.Column('deleted_at', sa.DateTime(), nullable=True),
     sa.Column('is_deleted', sa.Boolean(), nullable=True),
-    sa.ForeignKeyConstraint(['course_id'], ['courses.id'], ),
     sa.ForeignKeyConstraint(['department_id'], ['departments.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
@@ -77,15 +80,16 @@ def upgrade() -> None:
     sa.Column('student_name', sa.String(length=50), nullable=False),
     sa.Column('student_email', sa.String(length=50), nullable=False),
     sa.Column('student_phone', sa.String(length=50), nullable=False),
+    sa.Column('student_matric_no', sa.String(length=50), nullable=False),
+    sa.Column('password', sa.String(length=50), nullable=False),
     sa.Column('fingerprint', sa.String(length=255), nullable=True),
-    sa.Column('course_id', sa.Integer(), nullable=False),
+    sa.Column('fingerprint_map', sa.String(length=255), nullable=True),
     sa.Column('department_id', sa.Integer(), nullable=False),
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('updated_at', sa.DateTime(), nullable=True),
     sa.Column('deleted_at', sa.DateTime(), nullable=True),
     sa.Column('is_deleted', sa.Boolean(), nullable=True),
-    sa.ForeignKeyConstraint(['course_id'], ['courses.id'], ),
     sa.ForeignKeyConstraint(['department_id'], ['departments.id'], ),
     sa.PrimaryKeyConstraint('id')
     )

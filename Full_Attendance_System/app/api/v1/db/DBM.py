@@ -37,14 +37,18 @@ class DBM:
         """
         Retrieve all records of a model.
         """
-        stmt = select(model_class)
-        results = await session.execute(stmt)
-        return results.scalars().all()
+        async with session.begin():  # ✅ Ensures transaction begins
+            stmt = select(model_class)
+            results = await session.execute(stmt)
+            data = results.scalars().all()
+            print(f"✅ Retrieved {len(data)} records")  # Debugging
+            return data
 
     async def filter_by(self, session: AsyncSession, model_class, **filters):
         """
         Retrieve records using filters.
         """
+        
         stmt = select(model_class).filter_by(**filters)
         results = await session.execute(stmt)
         return results.scalars().all()

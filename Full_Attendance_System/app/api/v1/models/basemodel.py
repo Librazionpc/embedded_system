@@ -3,9 +3,12 @@ from uuid import uuid4
 from datetime import datetime, timedelta
 from app.api.v1.db import db  # Assuming db is your DB utility module
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import class_mapper
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 from datetime import date
 from app.api.v1.db.db_conn import Base
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 
 lecturer_course_association = Table(
     'lecturer_course_association',
@@ -35,6 +38,10 @@ class BaseModel:
     async def add_all(cls, session: AsyncSession, models: list) -> list:
         """Add multiple records to the database."""
         return await db.add_all(session, models)
+    @classmethod
+    async def get_all(cls, session: AsyncSession) -> list:
+        """Retrieve all records."""
+        return await db.get_all(session, cls)
 
     @classmethod
     async def filter_by(cls, session: AsyncSession, **filters) -> object:
@@ -51,56 +58,41 @@ class BaseModel:
         """Mark a record as deleted (soft delete)."""
         return await db.delete(session, model)
 
-    @classmethod
-    async def set_otp(cls, session: AsyncSession, email: str, otp_code: str, fingerprint: str, expiry_minutes: int = 5) -> object:
-        """Set the OTP and its expiration time asynchronously."""
-        user = await cls.filter_by(session, email=email)
-        if not user:
-            return False
-        if user:
-            user.otp = otp_code
-            user.otp_expiry = datetime.utcnow() + timedelta(minutes=expiry_minutes)
-            user.fingerprint = fingerprint
-            await cls.update(session, user)
-            return user
-
-    @classmethod
-    async def validate_otp(cls, session: AsyncSession, email: str, otp_code: str) -> bool:
-        """Check if OTP is valid asynchronously."""
-        user = await cls.filter_by(session, email=email)
-
-        if user and user.otp and user.otp_expiry and datetime.utcnow() < user.otp_expiry:
-            return user.otp == otp_code
-
-        return False
-
-    def to_dict(self, seen=None) -> dict:
+    async def to_dict_async(self, session: AsyncSession, seen=None) -> dict:
         """
-        Convert the model instance to a dictionary, including relationships,
-        while avoiding infinite recursion caused by circular relationships.
+        Convert an async SQLAlchemy model to a dictionary,
+        ensuring relationships are preloaded asynchronously.
         """
         if seen is None:
             seen = set()
         if id(self) in seen:
-            return None  # Prevent recursion
+            return None  # Prevent infinite recursion
         seen.add(id(self))
 
         result = {}
 
         # Handle regular fields (columns)
-        for key in class_mapper(self.__class__).columns.keys():
+        for key in self.__table__.columns.keys():
             value = getattr(self, key)
             if isinstance(value, (datetime, date)):
-                value = value.isoformat()  # Convert datetime or date to ISO format
+                value = value.isoformat()
             result[key] = value
 
-        # Handle relationships
-        for key, relationship in class_mapper(self.__class__).relationships.items():
-            related_obj = getattr(self, key)
-            if related_obj is not None:
-                if relationship.uselist:  # List of related objects
-                    result[key] = [item.to_dict(seen=seen) for item in related_obj]
-                else:  # Single related object
-                    result[key] = related_obj.to_dict(seen=seen)
+        # Ensure relationships are loaded asynchronously
+        for relationship in self.__mapper__.relationships:
+            rel_name = relationship.key
+            related_obj = getattr(self, rel_name, None)
+
+            if related_obj is None:
+                continue  # Skip if the relationship is empty
+
+            # ✅ Fetch relationships explicitly to avoid lazy-loading errors
+            if relationship.uselist:
+                related_objs = await session.execute(select(relationship.mapper.class_).where(relationship.mapper.class_.id == self.id))
+                result[rel_name] = [await obj.to_dict_async(session, seen=seen) for obj in related_objs.scalars()]
+            else:
+                related_obj = await session.execute(select(relationship.mapper.class_).where(relationship.mapper.class_.id == self.id))
+                single_obj = related_obj.scalars().first()
+                result[rel_name] = await single_obj.to_dict_async(session, seen=seen) if single_obj else None
 
         return result

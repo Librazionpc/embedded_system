@@ -1,30 +1,25 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 import uuid
 
 
 # Schema for creating a new Course
 class CourseCreate(BaseModel):
-    coursename: str
-    cousrecode: str
-    departmentid: uuid.UUID
+    coursename: str = Field(min_length=1)
+    coursecode: str = Field(min_length=1)
+    departmentname: str = Field(min_length=1)
 
 
 # Schema for updating a Course
 class CourseUpdate(BaseModel):
-    new_name: Optional[str]  # Correct syntax for Optional[str]
-    new_course_code: Optional[str]
-    new_dept_id: Optional[str]
+    new_name: Optional[str] = Field(min_length=1)
+    new_course_code: Optional[str] = Field(min_length=1)
+    new_deptartmentname: Optional[str] = Field(min_length=1)
 
-class CourseDelete:
-    coursecode: str
+class CourseDelete(BaseModel):
+    coursecode: str = Field(min_length=1)
 
 # Schema for returning a Course's data
-class CourseOut(BaseModel):
-    id: str
-    oursename: str
-    created_at: Optional[str]
-    updated_at: Optional[str]
-
-    class Config:
-        orm_mode = True  # Ensure compatibility with ORM models
+class CourseDetails(BaseModel):
+    coursecode: str = Field(min_length=1)
+    departmentname: str = Field(min_length=1)

@@ -13,7 +13,6 @@ class Attendance(BaseModel, Base):
     course_id = Column(Integer, ForeignKey('courses.id'), nullable=False)
     department_id = Column(Integer, ForeignKey('departments.id'), nullable=False)
     lecturer_id = Column(Integer, ForeignKey('lecturers.id'), nullable=False)
-    
     lecturer = relationship("Lecturer", back_populates="attendances")
     students = relationship("Student", back_populates="attendances")
     course = relationship("Course", back_populates="attendances")

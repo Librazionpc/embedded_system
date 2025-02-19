@@ -9,6 +9,9 @@ class Department(BaseModel, Base):
     
     departmentname = Column(String(50), nullable=False)
     facultyadmin_id = Column(Integer, ForeignKey('facultyadmins.id'), nullable=False)
+    department_email = Column(String(255), nullable=True)
+    fingerprint = Column(String(255), nullable=True)
+    password = Column(String(255), nullable=True)
     lecturers = relationship(Lecturer, back_populates="department")
     courses = relationship(Course, back_populates="department")
     students = relationship("Student", back_populates="department")

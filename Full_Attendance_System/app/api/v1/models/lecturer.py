@@ -7,11 +7,10 @@ class Lecturer(BaseModel, Base):
     __tablename__ = 'lecturers'
     
     lecturername = Column(String(50), nullable=False)
-    lectereremail = Column(String(50), nullable=False)
+    lectureremail = Column(String(50), nullable=False)
     department_id = Column(Integer, ForeignKey('departments.id'), nullable=False)
-    course_id = Column(Integer, ForeignKey('courses.id'), nullable=False)
-    
-    # Remove the direct import at the top and use a string reference
+    password = Column(String(50), nullable=False)
+    fingerprint = Column(String(50), nullable=False)
     department = relationship("Department", back_populates="lecturers")
     courses = relationship("Course", secondary=lecturer_course_association, back_populates="lecturers")
     attendances = relationship("Attendance", back_populates="lecturer")
